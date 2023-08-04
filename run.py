@@ -1,27 +1,30 @@
-# customer_drink = 450
-# customer_snack = 180
-# customer_token = 30
+good_stage = int(input("[*] 今日的经营商品是哪个阶段的商品？(1-4) "))
 
-# buy_drink = [20, 28, 38]
-# buy_snack = [10, 20, 32]
-# buy_token = [50, 100, 200]
+if good_stage == 1:
+    buy_drink = [20, 28, 38]
+    buy_snack = [10, 20, 32]
+    buy_token = [50, 100, 200]
+    sell_base_drink = 50
+    sell_base_snack = 40
+    sell_base_token = 1000
 
-# sell_base_drink = 50
-# sell_base_snack = 40
-# sell_base_token = 1000
+elif good_stage == 2:
+    buy_drink = [30, 42, 57]
+    buy_snack = [15, 30, 48]
+    buy_token = [50, 100, 200]
+    sell_base_drink = 100
+    sell_base_snack = 80
+    sell_base_token = 1000
 
-customer_drink = 450
-customer_snack = 450
-customer_token = 60
+elif good_stage == 3:
+    pass
 
-buy_drink = [30, 42, 57]
-buy_snack = [15, 30, 48]
-buy_token = [50, 100, 200]
+elif good_stage == 4:
+    pass
 
-sell_base_drink = 100
-sell_base_snack = 80
-sell_base_token = 1000
-
+customer_drink = int(input("[*] 今日的饮品爱好者有多少？"))
+customer_snack = int(input("[*] 今日的餐点爱好者有多少？"))
+customer_token = int(input("[*] 今日的纪念品爱好者有多少？"))
 customer = [customer_drink, customer_snack, customer_token]
 
 stock_drink = customer_drink
@@ -59,41 +62,30 @@ def average_with_weight(pairs):
 sell_result_cache = {}
 
 
-def sell_result(bid: Tuple, me: int):
+def sell_result(bid: Tuple, me: int) -> int:
     if (bid, me) in sell_result_cache:
         return sell_result_cache[(bid, me)]
-    ranks = [
-        sum([1 for i in range(len(bid)) if bid[i] < bid[x]]) for x in range(len(bid))
-    ]
-    sorted_ranks = np.sort(ranks)
-    if len(ranks) == 3:
-        if np.all(sorted_ranks == [0, 0, 0]):
-            ret = 30
-        elif np.all(sorted_ranks == [0, 0, 2]):
-            ret = [36, None, 18][ranks[bid.index(me)]]
-        elif np.all(sorted_ranks == [0, 1, 1]):
-            ret = [36, 27][ranks[bid.index(me)]]
-        elif np.all(sorted_ranks == [0, 1, 2]):
-            ret = [40, 30, 20][ranks[bid.index(me)]]
-        else:
-            print(bid, me, ranks, sorted_ranks)
-            raise NotImplementedError
-    elif len(ranks) == 2:
-        if np.all(sorted_ranks == [0, 0]):
-            ret = 5
-        elif np.all(sorted_ranks == [0, 1]):
-            ret = [6, 4][ranks[bid.index(me)]]
-        else:
-            print(bid, me, ranks, sorted_ranks)
-            raise NotImplementedError
+    ranks = [sum([1 for y in bid if y < x]) for x in bid]
+    sorted_ranks = sorted(ranks)
+    if sorted_ranks == [0, 0, 0]:
+        ret = 30
+    elif sorted_ranks == [0, 0, 2]:
+        ret = [36, None, 18][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 1, 1]:
+        ret = [36, 27][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 1, 2]:
+        ret = [40, 30, 20][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 0]:
+        ret = 5
+    elif sorted_ranks == [0, 1]:
+        ret = [6, 4][ranks[bid.index(me)]]
     else:
-        print(bid, me, ranks, sorted_ranks)
         raise NotImplementedError
     sell_result_cache[(bid, me)] = ret
     return ret
 
 
-def sell_conflict_checker(statement, info):
+def sell_conflict_checker(statement: Tuple, info: Tuple) -> bool:
     if len(info) == 0:
         return True
     if len(info) == 1:
@@ -105,11 +97,19 @@ def sell_conflict_checker(statement, info):
     return False
 
 
-def sell_determine_stage(num, rival_num, info, kind) -> Tuple[float, int]:
-    # print(num, rival_num, info, kind)
+sell_action_cache = {}
+
+
+def sell_action(
+    gid: int, num: Tuple, rival_num: Tuple, info: Tuple
+) -> Tuple[float, Tuple]:
+    if (gid, num, rival_num, info) in sell_action_cache:
+        return sell_action_cache[(gid, num, rival_num, info)]
+
+    # print(num, rival_num, info, gid)
     statements = [
         statement
-        for statement in product(range(11), repeat=[2, 2, 1][kind])
+        for statement in product(range(11), repeat=[2, 2, 1][gid])
         if sell_conflict_checker(statement, info)
     ]
 
@@ -117,16 +117,16 @@ def sell_determine_stage(num, rival_num, info, kind) -> Tuple[float, int]:
     for c in range(11):
         incomes = []
         for statement in statements:
-            customer_base = customer[kind] // [90, 90, 10][kind]
+            customer_base = customer[gid] // [90, 90, 10][gid]
             customer_num = customer_base * sell_result(statement + (c,), c)
-            income = min(customer_num, num) * sell[kind][c]
+            income = min(customer_num, num) * sell[gid][c]
             income_rank = 0
             for _c, _n in zip(statement, rival_num):
                 rival_customer_num = customer_base * sell_result(statement + (c,), _c)
-                rival_income = min(rival_customer_num, _n) * sell[kind][_c]
+                rival_income = min(rival_customer_num, _n) * sell[gid][_c]
                 if rival_income > income:
                     income_rank += 1
-            # print(c, statement + (c,), sell_result(statement + (c,), c), sell[kind][c], income, income_rank)
+            # print(c, statement + (c,), sell_result(statement + (c,), c), sell[gid][c], income, income_rank)
             if income_rank == 0:
                 income += 5000
             elif income_rank == 1:
@@ -138,65 +138,46 @@ def sell_determine_stage(num, rival_num, info, kind) -> Tuple[float, int]:
         if exp_income > best_income:
             best_income, best_choice = exp_income, (c,)
 
-    # print(kind, info, best_income, best_choice)
+    # print(gid, info, best_income, best_choice)
+    sell_action_cache[(gid, num, rival_num, info)] = (best_income, best_choice)
     return best_income, best_choice
 
 
 sell_stage_cache = {}
 
 
-def sell_stage(clues, nums, rival_nums, info, kind):
-    if kind == 3:
+def sell_stage(clues: int, gid: int, nums: Tuple, rival_nums: Tuple, info: Tuple):
+    if gid == 3:
         return 0, -1, None
-    if (clues, nums[kind:], rival_nums[kind:], info, kind) in sell_stage_cache:
-        return sell_stage_cache[(clues, nums[kind:], rival_nums[kind:], info, kind)]
+    if (clues, gid, nums[gid:], rival_nums[gid:], info) in sell_stage_cache:
+        return sell_stage_cache[(clues, gid, nums[gid:], rival_nums[gid:], info)]
 
-    best_income, best_choice = sell_determine_stage(
-        nums[kind], rival_nums[kind], info, kind
-    )
-    best_income += sell_stage(clues, nums, rival_nums, (), kind + 1)[0]
+    best_income, best_choice = sell_action(gid, nums[gid], rival_nums[gid], info)
+    best_income += sell_stage(clues, gid + 1, nums, rival_nums, ())[0]
 
     if clues:
         if info == ():
-            if kind != 2:
+            if gid != 2:
                 pry_income = average_with_weight(
                     [
-                        sell_stage(
-                            clues - 1,
-                            nums,
-                            rival_nums,
-                            (i, None),
-                            kind,
-                        )
+                        sell_stage(clues - 1, gid, nums, rival_nums, (i, None))
                         for i in range(11)
                     ]
                     + [
-                        sell_stage(
-                            clues - 1,
-                            nums,
-                            rival_nums,
-                            (None, i),
-                            kind,
-                        )
+                        sell_stage(clues - 1, gid, nums, rival_nums, (None, i))
                         for i in range(11)
                     ]
                 )
-                if pry_income > best_income:
+                if pry_income >= best_income:
                     best_income, best_choice = pry_income, -1
             else:
                 pry_income = average_with_weight(
                     [
-                        sell_stage(
-                            clues - 1,
-                            nums,
-                            rival_nums,
-                            (i,),
-                            kind,
-                        )
+                        sell_stage(clues - 1, gid, nums, rival_nums, (i,))
                         for i in range(11)
                     ]
                 )
-                if pry_income > best_income:
+                if pry_income >= best_income:
                     best_income, best_choice = pry_income, -1
         elif None in info:
             __idx = 1 - info.index(None)
@@ -204,10 +185,10 @@ def sell_stage(clues, nums, rival_nums, info, kind):
                 [
                     sell_stage(
                         clues - 1,
+                        gid,
                         nums,
                         rival_nums,
                         (i, info[1]) if __idx == 1 else (info[0], i),
-                        kind,
                     )
                     for i in range(info[__idx] + 1)
                 ]
@@ -217,11 +198,11 @@ def sell_stage(clues, nums, rival_nums, info, kind):
 
     statements = [
         statement
-        for statement in product(range(11), repeat=[2, 2, 1][kind])
+        for statement in product(range(11), repeat=[2, 2, 1][gid])
         if sell_conflict_checker(statement, info)
     ]
 
-    sell_stage_cache[(clues, nums[kind:], rival_nums[kind:], info, kind)] = (
+    sell_stage_cache[(clues, gid, nums[gid:], rival_nums[gid:], info)] = (
         best_income,
         best_choice,
         len(statements),
@@ -238,29 +219,20 @@ buy_result_cache = {}
 def buy_result(bid: Tuple, me: int):
     if (bid, me) in buy_result_cache:
         return buy_result_cache[(bid, me)]
-    ranks = [
-        sum([1 for i in range(len(bid)) if bid[i] > bid[x]]) for x in range(len(bid))
-    ]
-    sorted_ranks = np.sort(ranks)
-    if len(ranks) == 3:
-        if np.all(sorted_ranks == [0, 0, 0]):
-            ret = 30
-        elif np.all(sorted_ranks == [0, 0, 2]):
-            ret = [36, None, 18][ranks[bid.index(me)]]
-        elif np.all(sorted_ranks == [0, 1, 1]):
-            ret = [36, 27][ranks[bid.index(me)]]
-        elif np.all(sorted_ranks == [0, 1, 2]):
-            ret = [40, 30, 20][ranks[bid.index(me)]]
-        else:
-            print(bid, me, ranks, sorted_ranks)
-            raise NotImplementedError
-    elif len(ranks) == 2:
-        if np.all(sorted_ranks == [0, 0]):
-            ret = 5
-        elif np.all(sorted_ranks == [0, 1]):
-            ret = [6, 4][ranks[bid.index(me)]]
-        else:
-            raise NotImplementedError
+    ranks = [sum([1 for y in bid if y > x]) for x in bid]
+    sorted_ranks = sorted(ranks)
+    if sorted_ranks == [0, 0, 0]:
+        ret = 30
+    elif sorted_ranks == [0, 0, 2]:
+        ret = [36, None, 18][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 1, 1]:
+        ret = [36, 27][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 1, 2]:
+        ret = [40, 30, 20][ranks[bid.index(me)]]
+    elif sorted_ranks == [0, 0]:
+        ret = 5
+    elif sorted_ranks == [0, 1]:
+        ret = [6, 4][ranks[bid.index(me)]]
     else:
         raise NotImplementedError
     buy_result_cache[(bid, me)] = ret
@@ -275,7 +247,7 @@ def buy_conflict_checker(statement, info):
     return False
 
 
-def buy_determine_stage(clues, infos) -> Tuple[float, int]:
+def buy_action(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
     statements = [
         statement
         for statement in product(range(3), repeat=5)
@@ -314,9 +286,7 @@ def buy_determine_stage(clues, infos) -> Tuple[float, int]:
                 ),
                 (__st * buy_result(statement[4:5] + (c[2],), statement[4]),),
             )
-            # if c == (2, 2, 2):
-            #     print(c, statement, nums, rival_nums, costs)
-            sell_income = sell_stage(clues, nums, rival_nums, (), 0)[0]
+            sell_income = sell_stage(clues, 0, nums, rival_nums, ())[0]
             incomes.append(sell_income - costs)
         exp_income = sum(incomes) / len(incomes)
         if exp_income > best_income:
@@ -327,11 +297,11 @@ def buy_determine_stage(clues, infos) -> Tuple[float, int]:
 buy_stage_cache = {}
 
 
-def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]) -> Tuple[float, int]:
+def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
     if (clues, infos) in buy_stage_cache:
         return buy_stage_cache[(clues, infos)]
 
-    best_income, best_choice = buy_determine_stage(clues, infos)
+    best_income, best_choice = buy_action(clues, infos)
 
     if clues:
         if len(infos[0]) < 2:
@@ -378,104 +348,56 @@ def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]) -> Tuple[float, int
 
 # ============================================================
 
-
-def cal_profit(result, cost=0, income=0):
-    return (result[0] - cost + income,) + result[1:]
+import sys
 
 
-# print(buy_stage(6, ((), (), ())))
-# print(buy_stage(5, ((0,), (), ())))
-# print(buy_stage(4, ((0, 1), (), ())))
-# print(cal_profit(sell_stage(4, (180, 36, 12), ((90, 180), (72, 72), (18,)), (), 0), 6000))
-# print(cal_profit(sell_stage(3, (180, 36, 12), ((90, 180), (72, 72), (18,)), (None, 7), 0), 6000))
-# print(cal_profit(sell_stage(3, (180, 36, 12), ((90, 180), (72, 72), (18,)), (), 1), 6000, 12650))
-# print(cal_profit(sell_stage(3, (180, 36, 12), ((90, 180), (72, 72), (18,)), (), 2), 6000, 12650+2620))
-# print(sell_determine_stage(180, (90, 180), (None, 7), 0))
+def action_confirm():
+    input("行动结束后按下回车键……")
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K")
 
-# ============================================================
 
-# print(buy_stage(4, ((), (), ())))
-# print(buy_stage(3, ((), (), (2,))))
-# print(buy_determine_stage(3, ((), (), (2,))))
-# print(sell_stage(3, (216, 180, 35), ((216, 108), (135, 135), (35,)), (), 0))
-# print(sell_stage(2, (216, 180, 35), ((216, 108), (135, 135), (35,)), (6,), 0))
-# print(sell_stage(1, (216, 180, 35), ((216, 108), (135, 135), (35,)), (6,6), 0))
-# print(sell_stage(1, (216, 180, 35), ((216, 108), (135, 135), (35,)), (), 1))
-# print(sell_stage(1, (216, 180, 35), ((216, 108), (135, 135), (35,)), (), 2))
-# print(sell_stage(1, (216, 180, 35), ((216, 108), (135, 135), (35,)), (5,), 2))
-
-# ============================================================
-
-# print(buy_stage(4, ((), (), ())))
-
-# print(buy_stage(3, ((0,), (), ())))
-# print(buy_stage(3, ((1,), (), ())))
-# print(buy_stage(3, ((2,), (), ())))
-# print(buy_stage(3, ((), (0,), ())))
-# print(buy_stage(3, ((), (1,), ())))
-# print(buy_stage(3, ((), (2,), ())))
-# print(buy_stage(3, ((), (), (0,))))
-# print(buy_stage(3, ((), (), (1,))))
-# print(buy_stage(3, ((), (), (2,))))
-
-# print(cal_profit(sell_stage(3, (150, 180, 35), ((100, 200), (240, 120), (35,)), (), 0), 18700))
-# print(cal_profit(sell_stage(2, (150, 180, 35), ((100, 200), (240, 120), (35,)), (None, 6), 0), 18700))
-# print(cal_profit(sell_stage(1, (150, 180, 35), ((100, 200), (240, 120), (35,)), (3, 6), 0), 18700))
-# print(cal_profit(sell_stage(1, (150, 180, 35), ((100, 200), (240, 120), (35,)), (), 1), 18700, 20000))
-# print(cal_profit(sell_stage(1, (150, 180, 35), ((100, 200), (240, 120), (35,)), (), 2), 18700, 20000+18860))
-# print(cal_profit(sell_stage(0, (150, 180, 35), ((100, 200), (240, 120), (35,)), (5,), 2), 18700, 20000+18860))
-
-# print(sell_stage(3, (180, 150, 36), ((90, 180), (100, 200), (24,)), (), 0))
-
-# exit()
-
-# ============================================================
-
-clues = int(input("请输入可打探的次数："))
+clues = int(input("[*] 请输入可打探的次数："))
 infos = ((), (), ())
 print("请稍等，正在计算……")
 while True:
     ret = buy_stage(clues, infos)
-    print("当前期望收益为：", ret[0])
+    print("[+] 当前期望收益为：", ret[0])
     if isinstance(ret[1], int):
-        print("***** 请选择打探第 %d 个物品的信息（默认选择第一个未被打探的商家）" % (ret[1] + 1))
-        print("请问打探到的消息中，该商家的策略是：")
-        choice = int(input("（1：保守，2：稳健，3：激进）"))
+        print("[A] 请选择打探 %s 的信息（选择从上往下第一个未被打探过的商店）" % (["饮品", "餐点", "纪念品"][ret[1]]))
+        action_confirm()
+        choice = int(input("[*] 请问打探到的消息中，该商店的策略是？(1-3) "))
         infos = list(infos)
         infos[ret[1]] = infos[ret[1]] + (choice - 1,)
         infos = tuple(infos)
         clues -= 1
     else:
-        print("进货策略已确定：")
-        print("***** 饮品进货策略：", ["保守", "稳健", "激进"][ret[1][0]])
-        print("***** 餐点进货策略：", ["保守", "稳健", "激进"][ret[1][1]])
-        print("***** 纪念品进货策略：", ["保守", "稳健", "激进"][ret[1][2]])
+        strategy = [["保守", "稳健", "激进"][ret[1][i]] for i in range(3)]
+        print("[A] 进货策略已确定：" + "，".join(strategy))
+        action_confirm()
         break
 
-print("请告诉我每种东西的进货情况，需要按照商家的顺序给出，每家店的进货情况用空格隔开。")
-print("举例子：30 40 50")
-drink = tuple(map(int, input("饮品进货情况：").strip().split(" ")))
-snack = tuple(map(int, input("餐点进货情况：").strip().split(" ")))
-token = tuple(map(int, input("纪念品进货情况：").strip().split(" ")))
+cost = int(input("[*] 请输入进货总成本："))
+income = 0
+
+print("[+] 请告知每种商品的进货情况，店与店之间用空格隔开。")
+print("[+] 注意，商店的次序需要是特定的顺序（雪雉商店，其他商店，时钟商店）而不是进货数量排行榜的顺序。")
+drink = tuple(map(int, input("[*] 饮品进货情况：").strip().split(" ")))
+snack = tuple(map(int, input("[*] 餐点进货情况：").strip().split(" ")))
+token = tuple(map(int, input("[*] 纪念品进货情况：").strip().split(" ")))
 nums = (drink[0], snack[0], token[0])
 rival_nums = (drink[1:], snack[1:], token[1:])
 
-cost = int(input("请输入进货总成本："))
-income = 0
-
-print("现在开始售卖阶段。")
-
-print("首先是饮品。")
+print("饮品售卖阶段。")
 info = ()
 while True:
-    print(clues, nums, rival_nums, info, 0)
-    ret = sell_stage(clues, nums, rival_nums, info, 0)
-    print("当前期望收益为：", ret[0] - cost + income)
+    ret = sell_stage(clues, 0, nums, rival_nums, info)
+    print("[+] 当前期望收益为：", ret[0] - cost + income)
     if isinstance(ret[1], int):
-        print("***** 请进行一次消息打探。")
-        print("请问打探到了哪个商家的信息？")
-        rival = int(input("（1: 非时钟，2: 时钟）"))
-        price = int(input("请问他们的售价是？"))
+        print("[A] 请进行一次消息打探。")
+        action_confirm()
+        rival = int(input("[*] 请问打探到了哪个商店的信息？(1-2) "))
+        price = int(input("[*] 请问他们给出的售价是？"))
         price_idx = list(sell_drink).index(price)
         if info == ():
             info = (None, None)
@@ -484,22 +406,22 @@ while True:
         info = tuple(info)
         clues -= 1
     else:
-        print("饮品售卖策略已确定：")
-        print("***** 请设定价格为：", sell_drink[ret[1][0]])
+        print("[A] 饮品售卖策略已确定。请设定价格为：", sell_drink[ret[1][0]])
+        action_confirm()
         break
-income += int(input("请输入饮品售卖收益："))
+income += int(input("[*] 请输入饮品售卖收益："))
 
 
-print("其次是餐品。")
+print("餐品售卖阶段。")
 info = ()
 while True:
-    ret = sell_stage(clues, nums, rival_nums, info, 1)
-    print("当前期望收益为：", ret[0] - cost + income)
+    ret = sell_stage(clues, 1, nums, rival_nums, info)
+    print("[+] 当前期望收益为：", ret[0] - cost + income)
     if isinstance(ret[1], int):
-        print("***** 请进行一次消息打探。")
-        print("请问打探到了哪个商家的信息？")
-        rival = int(input("（1: 非时钟，2: 时钟）"))
-        price = int(input("请问他们的售价是？"))
+        print("[A] 请进行一次消息打探。")
+        action_confirm()
+        rival = int(input("[*] 请问打探到了哪个商店的信息？(1-2) "))
+        price = int(input("[*] 请问他们给出的售价是？"))
         price_idx = list(sell_snack).index(price)
         if info == ():
             info = (None, None)
@@ -508,28 +430,29 @@ while True:
         info = tuple(info)
         clues -= 1
     else:
-        print("餐点售卖策略已确定：")
-        print("***** 请设定价格为：", sell_snack[ret[1][0]])
+        print("[A] 餐品售卖策略已确定。请设定价格为：", sell_snack[ret[1][0]])
+        action_confirm()
         break
-income += int(input("请输入餐点售卖收益："))
+income += int(input("[*] 请输入餐点售卖收益："))
 
 
-print("最后是纪念品。")
+print("纪念品售卖阶段。不考虑库存的问题。")
 info = ()
 while True:
-    ret = sell_stage(clues, nums, rival_nums, info, 2)
-    print("当前期望收益为：", ret[0] - cost + income)
+    ret = sell_stage(clues, 2, nums, rival_nums, info)
+    print("[+] 当前期望收益为：", ret[0] - cost + income)
     if isinstance(ret[1], int):
-        print("***** 请进行一次消息打探。")
-        price = int(input("请问他们的售价是？"))
+        print("[A] 请进行一次消息打探。")
+        action_confirm()
+        price = int(input("[*] 请问他们给出的售价是？"))
         price_idx = list(sell_token).index(price)
         info = (price_idx,)
         clues -= 1
     else:
-        print("纪念品售卖策略已确定：")
-        print("***** 请设定价格为：", sell_token[ret[1][0]])
+        print("[A] 纪念品售卖策略已确定。请设定价格为：", sell_token[ret[1][0]])
+        action_confirm()
         break
-income += int(input("请输入纪念品售卖收益："))
+income += int(input("[*] 请输入纪念品售卖收益："))
 
 print("结束了！")
 print("最终收益为：", income - cost)

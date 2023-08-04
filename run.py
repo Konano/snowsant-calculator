@@ -26,7 +26,7 @@ customer_drink = int(input("[*] 今日的饮品爱好者有多少？"))
 customer_snack = int(input("[*] 今日的餐点爱好者有多少？"))
 customer_token = int(input("[*] 今日的纪念品爱好者有多少？"))
 customer = [customer_drink, customer_snack, customer_token]
-
+buy_prices = [buy_drink, buy_snack, buy_token]
 stock_drink = customer_drink
 stock_snack = customer_snack
 stock_token = customer_token
@@ -351,6 +351,20 @@ def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
 import sys
 
 
+class Colors:
+    RESET = "\033[0m"
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
 def action_confirm():
     input("行动结束后按下回车键……")
     sys.stdout.write("\033[F")
@@ -362,7 +376,7 @@ infos = ((), (), ())
 print("请稍等，正在计算……")
 while True:
     ret = buy_stage(clues, infos)
-    print("[+] 当前期望收益为：", ret[0])
+    print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0]}" + Colors.RESET)
     if isinstance(ret[1], int):
         print("[A] 请选择打探 %s 的信息（选择从上往下第一个未被打探过的商店）" % (["饮品", "餐点", "纪念品"][ret[1]]))
         action_confirm()
@@ -377,9 +391,6 @@ while True:
         action_confirm()
         break
 
-cost = int(input("[*] 请输入进货总成本："))
-income = 0
-
 print("[+] 请告知每种商品的进货情况，店与店之间用空格隔开。")
 print("[+] 注意，商店的次序需要是特定的顺序（雪雉商店，其他商店，时钟商店）而不是进货数量排行榜的顺序。")
 drink = tuple(map(int, input("[*] 饮品进货情况：").strip().split(" ")))
@@ -388,11 +399,14 @@ token = tuple(map(int, input("[*] 纪念品进货情况：").strip().split(" "))
 nums = (drink[0], snack[0], token[0])
 rival_nums = (drink[1:], snack[1:], token[1:])
 
+cost = sum([nums[i] * buy_prices[i][ret[1][i]] for i in range(3)])
+income = 0
+
 print("饮品售卖阶段。")
 info = ()
 while True:
     ret = sell_stage(clues, 0, nums, rival_nums, info)
-    print("[+] 当前期望收益为：", ret[0] - cost + income)
+    print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
         print("[A] 请进行一次消息打探。")
         action_confirm()
@@ -416,7 +430,7 @@ print("餐品售卖阶段。")
 info = ()
 while True:
     ret = sell_stage(clues, 1, nums, rival_nums, info)
-    print("[+] 当前期望收益为：", ret[0] - cost + income)
+    print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
         print("[A] 请进行一次消息打探。")
         action_confirm()
@@ -440,7 +454,7 @@ print("纪念品售卖阶段。不考虑库存的问题。")
 info = ()
 while True:
     ret = sell_stage(clues, 2, nums, rival_nums, info)
-    print("[+] 当前期望收益为：", ret[0] - cost + income)
+    print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
         print("[A] 请进行一次消息打探。")
         action_confirm()
@@ -454,5 +468,5 @@ while True:
         break
 income += int(input("[*] 请输入纪念品售卖收益："))
 
+print(Colors.GREEN + f"[+] 实际收益为：{income - cost}" + Colors.RESET)
 print("结束了！")
-print("最终收益为：", income - cost)

@@ -1,3 +1,17 @@
+class Colors:
+    RESET = "\033[0m"
+    BLACK = "\033[30m"
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
+
 good_stage = int(input("[*] 今日的经营商品是哪个阶段的商品？(1-4) "))
 
 if good_stage == 1:
@@ -17,10 +31,12 @@ elif good_stage == 2:
     sell_base_token = 1000
 
 elif good_stage == 3:
-    pass
+    print(Colors.RED + "[!] 该商品种类的基础数据还未添加。" + Colors.RESET)
+    exit()
 
 elif good_stage == 4:
-    pass
+    print(Colors.RED + "[!] 该商品种类的基础数据还未添加。" + Colors.RESET)
+    exit()
 
 customer_drink = int(input("[*] 今日的饮品爱好者有多少？"))
 customer_snack = int(input("[*] 今日的餐点爱好者有多少？"))
@@ -31,8 +47,6 @@ stock_drink = customer_drink
 stock_snack = customer_snack
 stock_token = customer_token
 
-import numpy as np
-
 # aaa = (30, 30, 30)
 # aab = (36, 36, 18)
 # abb = (36, 27, 27)
@@ -40,16 +54,15 @@ import numpy as np
 # aa = (5, 5)
 # ab = (6, 4)
 
-sell_drink = np.arange(-5, 6) * 1 + sell_base_drink
-sell_snack = np.arange(-5, 6) * 1 + sell_base_snack
-sell_token = np.arange(-5, 6) * 10 + sell_base_token
+sell_drink = list(range(sell_base_drink - 5, sell_base_drink + 6, 1))
+sell_snack = list(range(sell_base_snack - 5, sell_base_snack + 6, 1))
+sell_token = list(range(sell_base_token - 50, sell_base_token + 51, 10))
 sell = [sell_drink, sell_snack, sell_token]
 
 # ============================================================
 
 
 from itertools import product
-from typing import Tuple
 
 
 def average_with_weight(pairs):
@@ -62,7 +75,7 @@ def average_with_weight(pairs):
 sell_result_cache = {}
 
 
-def sell_result(bid: Tuple, me: int) -> int:
+def sell_result(bid, me) -> int:
     if (bid, me) in sell_result_cache:
         return sell_result_cache[(bid, me)]
     ranks = [sum([1 for y in bid if y < x]) for x in bid]
@@ -85,7 +98,7 @@ def sell_result(bid: Tuple, me: int) -> int:
     return ret
 
 
-def sell_conflict_checker(statement: Tuple, info: Tuple) -> bool:
+def sell_conflict_checker(statement, info) -> bool:
     if len(info) == 0:
         return True
     if len(info) == 1:
@@ -100,9 +113,7 @@ def sell_conflict_checker(statement: Tuple, info: Tuple) -> bool:
 sell_action_cache = {}
 
 
-def sell_action(
-    gid: int, num: Tuple, rival_num: Tuple, info: Tuple
-) -> Tuple[float, Tuple]:
+def sell_action(gid, num, rival_num, info):
     if (gid, num, rival_num, info) in sell_action_cache:
         return sell_action_cache[(gid, num, rival_num, info)]
 
@@ -146,7 +157,7 @@ def sell_action(
 sell_stage_cache = {}
 
 
-def sell_stage(clues: int, gid: int, nums: Tuple, rival_nums: Tuple, info: Tuple):
+def sell_stage(clues, gid, nums, rival_nums, info):
     if gid == 3:
         return 0, -1, None
     if (clues, gid, nums[gid:], rival_nums[gid:], info) in sell_stage_cache:
@@ -216,7 +227,7 @@ def sell_stage(clues: int, gid: int, nums: Tuple, rival_nums: Tuple, info: Tuple
 buy_result_cache = {}
 
 
-def buy_result(bid: Tuple, me: int):
+def buy_result(bid, me):
     if (bid, me) in buy_result_cache:
         return buy_result_cache[(bid, me)]
     ranks = [sum([1 for y in bid if y > x]) for x in bid]
@@ -247,7 +258,7 @@ def buy_conflict_checker(statement, info):
     return False
 
 
-def buy_action(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
+def buy_action(clues, infos):
     statements = [
         statement
         for statement in product(range(3), repeat=5)
@@ -297,7 +308,7 @@ def buy_action(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
 buy_stage_cache = {}
 
 
-def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
+def buy_stage(clues, infos):
     if (clues, infos) in buy_stage_cache:
         return buy_stage_cache[(clues, infos)]
 
@@ -351,20 +362,6 @@ def buy_stage(clues: int, infos: Tuple[Tuple, Tuple, Tuple]):
 import sys
 
 
-class Colors:
-    RESET = "\033[0m"
-    BLACK = "\033[30m"
-    RED = "\033[31m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    BLUE = "\033[34m"
-    MAGENTA = "\033[35m"
-    CYAN = "\033[36m"
-    WHITE = "\033[37m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
 def action_confirm():
     input("行动结束后按下回车键……")
     sys.stdout.write("\033[F")
@@ -393,9 +390,22 @@ while True:
 
 print("[+] 请告知每种商品的进货情况，店与店之间用空格隔开。")
 print("[+] 注意，商店的次序需要是特定的顺序（雪雉商店，其他商店，时钟商店）而不是进货数量排行榜的顺序。")
-drink = tuple(map(int, input("[*] 饮品进货情况：").strip().split(" ")))
-snack = tuple(map(int, input("[*] 餐点进货情况：").strip().split(" ")))
-token = tuple(map(int, input("[*] 纪念品进货情况：").strip().split(" ")))
+
+drink = tuple(map(int, input("[*] 饮品进货数量（三个数，中间用空格隔开）：").strip().split(" ")))
+while sum(drink) != customer_drink:
+    print(Colors.RED + "[!] 饮品进货总数量与顾客数量不符，请重新输入。" + Colors.RESET)
+    drink = tuple(map(int, input("[*] 饮品进货数量（三个数，中间用空格隔开）：").strip().split(" ")))
+
+snack = tuple(map(int, input("[*] 餐点进货数量（三个数，中间用空格隔开）：").strip().split(" ")))
+while sum(snack) != customer_snack:
+    print(Colors.RED + "[!] 餐点进货总数量与顾客数量不符，请重新输入。" + Colors.RESET)
+    snack = tuple(map(int, input("[*] 餐点进货数量（三个数，中间用空格隔开）：").strip().split(" ")))
+
+token = tuple(map(int, input("[*] 纪念品进货数量（两个数，中间用空格隔开）：").strip().split(" ")))
+while sum(token) != customer_token:
+    print(Colors.RED + "[!] 纪念品进货总数量与顾客数量不符，请重新输入。" + Colors.RESET)
+    token = tuple(map(int, input("[*] 纪念品进货数量（两个数，中间用空格隔开）：").strip().split(" ")))
+
 nums = (drink[0], snack[0], token[0])
 rival_nums = (drink[1:], snack[1:], token[1:])
 
@@ -423,7 +433,7 @@ while True:
         print("[A] 饮品售卖策略已确定。请设定价格为：", sell_drink[ret[1][0]])
         action_confirm()
         break
-income += int(input("[*] 请输入饮品售卖收益："))
+income += int(input("[*] 请输入饮品售卖收益（包括激励奖励）："))
 
 
 print("餐品售卖阶段。")
@@ -447,7 +457,7 @@ while True:
         print("[A] 餐品售卖策略已确定。请设定价格为：", sell_snack[ret[1][0]])
         action_confirm()
         break
-income += int(input("[*] 请输入餐点售卖收益："))
+income += int(input("[*] 请输入餐点售卖收益（包括激励奖励）："))
 
 
 print("纪念品售卖阶段。不考虑库存的问题。")
@@ -466,7 +476,8 @@ while True:
         print("[A] 纪念品售卖策略已确定。请设定价格为：", sell_token[ret[1][0]])
         action_confirm()
         break
-income += int(input("[*] 请输入纪念品售卖收益："))
+income += int(input("[*] 请输入纪念品售卖收益（包括激励奖励）："))
 
 print(Colors.GREEN + f"[+] 实际收益为：{income - cost}" + Colors.RESET)
 print("结束了！")
+action_confirm()

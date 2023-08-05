@@ -104,9 +104,16 @@ def sell_conflict_checker(statement, info) -> bool:
     if len(info) == 1:
         return info == statement
     if len(info) == 2:
-        return (info[0] is None or info[0] == statement[0]) and (
-            info[1] is None or info[1] == statement[1]
-        )
+        if info == (None, None):
+            return True
+        elif None not in info:
+            return info == statement
+        elif info[0] == None:
+            return info[1] == statement[1] and info[1] >= statement[0]
+        elif info[1] == None:
+            return info[0] == statement[0] and info[0] >= statement[1]
+        else:
+            raise NotImplementedError
     return False
 
 
@@ -148,6 +155,7 @@ def sell_action(gid, num, rival_num, info):
             incomes.append(income)
             if len(info) == 2 and None in info and statement[0] == statement[1]:
                 sameprice = income
+        # print(c, incomes, sameprice)
         if sameprice is not None:
             exp_income = (sum(incomes) - 0.5 * sameprice) / (len(incomes) - 0.5)
         else:
@@ -155,7 +163,7 @@ def sell_action(gid, num, rival_num, info):
         if exp_income > best_income:
             best_income, best_choice = exp_income, (c,)
 
-    # print(gid, info, best_income, best_choice)
+    # print(gid, info, best_income, best_choice, statements)
     sell_action_cache[(gid, num, rival_num, info)] = (best_income, best_choice)
     return best_income, best_choice
 

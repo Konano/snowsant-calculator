@@ -127,6 +127,7 @@ def sell_action(gid, num, rival_num, info):
     best_income, best_choice = -1e9, None
     for c in range(11):
         incomes = []
+        sameprice = None
         for statement in statements:
             customer_base = customer[gid] // [90, 90, 10][gid]
             customer_num = customer_base * sell_result(statement + (c,), c)
@@ -145,7 +146,12 @@ def sell_action(gid, num, rival_num, info):
             else:
                 income += 1000
             incomes.append(income)
-        exp_income = sum(incomes) / len(incomes)
+            if len(info) == 2 and None in info and statement[0] == statement[1]:
+                sameprice = incomes
+        if sameprice is not None:
+            exp_income = (sum(incomes)-0.5*sameprice)/(len(incomes)-0.5)
+        else:
+            exp_income = sum(incomes) / len(incomes)
         if exp_income > best_income:
             best_income, best_choice = exp_income, (c,)
 

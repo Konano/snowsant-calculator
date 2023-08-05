@@ -147,9 +147,9 @@ def sell_action(gid, num, rival_num, info):
                 income += 1000
             incomes.append(income)
             if len(info) == 2 and None in info and statement[0] == statement[1]:
-                sameprice = incomes
+                sameprice = income
         if sameprice is not None:
-            exp_income = (sum(incomes)-0.5*sameprice)/(len(incomes)-0.5)
+            exp_income = (sum(incomes) - 0.5 * sameprice) / (len(incomes) - 0.5)
         else:
             exp_income = sum(incomes) / len(incomes)
         if exp_income > best_income:

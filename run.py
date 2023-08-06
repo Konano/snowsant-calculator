@@ -231,7 +231,7 @@ sell_stage_cache = {}
 
 def sell_stage(clues, gid, nums, rival_nums, info):
     if gid == 3:
-        return 0, -1, None
+        return -clues, -1, None
     if (clues, gid, nums[gid:], rival_nums[gid:], info) in sell_stage_cache:
         return sell_stage_cache[(clues, gid, nums[gid:], rival_nums[gid:], info)]
 
@@ -251,7 +251,7 @@ def sell_stage(clues, gid, nums, rival_nums, info):
                         for i in range(11)
                     ]
                 )
-                if pry_income >= best_income:
+                if pry_income > best_income:
                     best_income, best_choice = pry_income, -1
             else:
                 pry_income = average_with_weight(
@@ -260,7 +260,7 @@ def sell_stage(clues, gid, nums, rival_nums, info):
                         for i in range(11)
                     ]
                 )
-                if pry_income >= best_income:
+                if pry_income > best_income:
                     best_income, best_choice = pry_income, -1
         elif None in info:
             __idx = 1 - info.index(None)
@@ -285,12 +285,16 @@ def sell_stage(clues, gid, nums, rival_nums, info):
         if sell_conflict_checker(statement, info)
     ]
 
+    statements_num = len(statements)
+    if len(info) == 2 and None in info:
+        statements_num -= 0.5
+
     sell_stage_cache[(clues, gid, nums[gid:], rival_nums[gid:], info)] = (
         best_income,
         best_choice,
-        len(statements),
+        statements_num,
     )
-    return best_income, best_choice, len(statements)
+    return best_income, best_choice, statements_num
 
 
 # ============================================================

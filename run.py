@@ -107,9 +107,9 @@ stock_token = customer_token
 
 remain_me = input_int("[*] 纪念品库存有多少（不知道的话填 0 即可）？")
 remain_rival = input_int("[*] 对方的纪念品库存有多少（不知道的话填 0 即可）？")
-remain_strategy = input_int("[*] 是否允许用更少的当日收入换取更多的纪念品库存？(0/1) ", (0, 1))
+remain_strategy = input_int("[*] 是否允许用更少的当日收入换取期望更多的未来收入？(0/1) ", (0, 1))
 if remain_strategy:
-    print(Colors.RED + "[!] 请注意，后续的期望收益包括纪念品库存在未来可能的收益。" + Colors.RESET)
+    print(Colors.RED + "[!] 请注意，后续的期望收益包括纪念品库存未来可能的收益。" + Colors.RESET)
 
 # aaa = (30, 30, 30)
 # aab = (36, 36, 18)

@@ -105,6 +105,12 @@ stock_drink = customer_drink
 stock_snack = customer_snack
 stock_token = customer_token
 
+remain_me = input_int("[*] 纪念品库存有多少（不知道的话填 0 即可）？")
+remain_rival = input_int("[*] 对方的纪念品库存有多少（不知道的话填 0 即可）？")
+remain_strategy = input_int("[*] 是否允许用更少的当日收入换取更多的纪念品库存？(0/1) ", (0, 1))
+if remain_strategy:
+    print(Colors.RED + "[!] 请注意，后续的期望收益包括纪念品库存在未来可能的收益。" + Colors.RESET)
+
 # aaa = (30, 30, 30)
 # aab = (36, 36, 18)
 # abb = (36, 27, 27)
@@ -116,6 +122,8 @@ sell_drink = list(range(sell_base_drink - 5, sell_base_drink + 6, 1))
 sell_snack = list(range(sell_base_snack - 5, sell_base_snack + 6, 1))
 sell_token = list(range(sell_base_token - 50, sell_base_token + 51, 10))
 sell = [sell_drink, sell_snack, sell_token]
+
+future_value = (sell_token[5] + sell_token[4]) // 2
 
 # ============================================================
 
@@ -179,6 +187,8 @@ sell_action_cache = {}
 
 
 def sell_action(gid, num, rival_num, info):
+    num += remain_me * (gid == 2)
+
     if (gid, num, rival_num, info) in sell_action_cache:
         return sell_action_cache[(gid, num, rival_num, info)]
 
@@ -199,6 +209,7 @@ def sell_action(gid, num, rival_num, info):
             income = min(customer_num, num) * sell[gid][c]
             income_rank = 0
             for _c, _n in zip(statement, rival_num):
+                _n += remain_rival * (gid == 2)
                 rival_customer_num = customer_base * sell_result(statement + (c,), _c)
                 rival_income = min(rival_customer_num, _n) * sell[gid][_c]
                 if rival_income > income:
@@ -210,14 +221,16 @@ def sell_action(gid, num, rival_num, info):
                 income += 2000
             else:
                 income += 1000
+            if remain_strategy and gid == 2 and num > customer_num:
+                income += (num - customer_num) * future_value
             incomes.append(income)
             if len(info) == 2 and None in info and statement[0] == statement[1]:
                 sameprice = income
-        # print(c, incomes, sameprice)
         if sameprice is not None:
             exp_income = (sum(incomes) - 0.5 * sameprice) / (len(incomes) - 0.5)
         else:
             exp_income = sum(incomes) / len(incomes)
+        # print(c, incomes, sameprice, exp_income)
         if exp_income > best_income:
             best_income, best_choice = exp_income, (c,)
 
@@ -452,7 +465,7 @@ while True:
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0]}" + Colors.RESET)
     if isinstance(ret[1], int):
         goods = ["饮品", "餐点", "纪念品"][ret[1]]
-        print(Colors.YELLOW + f"[A] 请选择打探 {goods} 的信息（选择从上往下第一个未被打探过的商店）" + Colors.RESET)
+        print(Colors.YELLOW + f"[A] 请选择打探 {goods} 的信息（选择从上往下第一个未打探过的商店）" + Colors.RESET)
         action_confirm()
         choice = input_int("[*] 请问打探到的消息中，该商店的进货策略是？(1-3) ", range(1, 4))
         infos = list(infos)
@@ -528,7 +541,7 @@ while True:
 income += input_int("[*] 请输入餐点售卖收益（包括激励奖励）：")
 
 
-print("纪念品售卖阶段。不考虑库存的问题。")
+print("纪念品售卖阶段。")
 info = ()
 while True:
     ret = sell_stage(clues, 2, nums, rival_nums, info)
@@ -547,6 +560,21 @@ while True:
         break
 income += input_int("[*] 请输入纪念品售卖收益（包括激励奖励）：")
 
+sold_token_me = input_int("[*] 请输入纪念品售卖数量：")
+sold_token_rival = input_int("[*] 请输入钟表商店的纪念品售卖数量：")
+new_remain_me = remain_me + nums[-1] - sold_token_me
+new_remain_rival = remain_rival + rival_nums[-1][-1] - sold_token_rival
+print(Colors.GREEN + f"[+] 纪念品库存为：{new_remain_me}" + Colors.RESET)
+print(Colors.GREEN + f"[+] 钟表商店的纪念品库存为：{new_remain_rival}" + Colors.RESET)
+if new_remain_rival < 0:
+    print(Colors.RED + f"[!] 哦！貌似钟表商店之前是有库存的！没关系，他们现在大概率没库存了 =v=" + Colors.RESET)
+print("请记录好以上信息。")
+
+print("最后……")
+
 print(Colors.GREEN + f"[+] 实际收益为：{income - cost}" + Colors.RESET)
+if new_remain_me:
+    print(Colors.GREEN + f"[+] 未来期望收益为：{future_value * new_remain_me}" + Colors.RESET)
+
 print("结束了！")
 action_confirm()

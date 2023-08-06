@@ -457,7 +457,7 @@ def action_confirm():
     sys.stdout.write("\033[K")
 
 
-clues = input_int("[*] 请输入可打探的次数：", range(11))
+clues = input_int("[*] 请输入可打探的次数：", (4, 5, 6))
 infos = ((), (), ())
 print("请稍等，正在计算中……")
 while True:

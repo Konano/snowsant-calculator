@@ -10,14 +10,46 @@ class Colors:
     WHITE = "\033[37m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+    GREY = "\033[90m"
+
+
+HELLO = r"""
+   _____                                     _    
+  / ____|                                   | |   
+ | (___  _ __   _____      _____  __ _ _ __ | |_  
+  \___ \| '_ \ / _ \ \ /\ / / __|/ _` | '_ \| __| 
+  ____) | | | | (_) \ V  V /\__ \ (_| | | | | |_  
+ |_____/|_| |_|\___/ \_/\_/ |___/\__,_|_| |_|\__| 
+    _____      _            _       _             
+  / ____|    | |          | |     | |            
+ | |     __ _| | ___ _   _| | __ _| |_ ___  _ __ 
+ | |    / _` | |/ __| | | | |/ _` | __/ _ \| '__|
+ | |___| (_| | | (__| |_| | | (_| | || (_) | |   
+  \_____\__,_|_|\___|\__,_|_|\__,_|\__\___/|_|   
+
+"""
+
+ALERT = r"""
+=============================================================
+|                                                           |
+|  如果遇到一启动就 Connection closed 的情况，可以稍后重试  |
+|                                                           |
+============================================================="""
+
+# print(Colors.RED + ALERT + Colors.RESET)
+print(Colors.CYAN + HELLO + Colors.RESET)
 
 
 def input_int(prompt, valid=None):
     while True:
         try:
             value = int(input(prompt))
-            if valid is not None:
+            if isinstance(valid, (range, list)):
+                valid = tuple(valid)
+            if isinstance(valid, tuple):
                 assert value in valid, f"[!] 输入的值不在合法范围内：{valid}"
+            if isinstance(valid, int):
+                assert value % valid == 0, f"[!] 输入的值需要是 {valid} 的倍数。"
             return value
         except AssertionError as e:
             print(Colors.RED + str(e) + Colors.RESET)
@@ -38,7 +70,7 @@ def input_ints(prompt, nums, sum_to):
             print(Colors.RED + "[!] 输入有误，请重新输入。" + Colors.RESET)
 
 
-good_stage = input_int("[*] 今日经营的商品是哪个阶段的商品？(1-4) ", tuple(range(1, 5)))
+good_stage = input_int("[*] 今日经营的商品是哪个阶段的商品？(1-4) ", range(1, 5))
 
 if good_stage == 1:
     buy_drink = [20, 28, 38]
@@ -64,9 +96,9 @@ elif good_stage == 4:
     print(Colors.RED + "[!] 该商品种类的基础数据尚未添加。" + Colors.RESET)
     exit()
 
-customer_drink = input_int("[*] 今日的饮品爱好者有多少？", tuple(range(90, 1000, 90)))
-customer_snack = input_int("[*] 今日的餐点爱好者有多少？", tuple(range(90, 1000, 90)))
-customer_token = input_int("[*] 今日的纪念品爱好者有多少？", tuple(range(10, 100, 10)))
+customer_drink = input_int("[*] 今日的饮品爱好者有多少？", 90)
+customer_snack = input_int("[*] 今日的餐点爱好者有多少？", 90)
+customer_token = input_int("[*] 今日的纪念品爱好者有多少？", 10)
 customer = [customer_drink, customer_snack, customer_token]
 buy_prices = [buy_drink, buy_snack, buy_token]
 stock_drink = customer_drink
@@ -403,28 +435,29 @@ import sys
 
 
 def action_confirm():
-    input("行动结束后按下回车键……")
+    input(Colors.GREY + "行动结束后按下回车键……" + Colors.RESET)
     sys.stdout.write("\033[F")
     sys.stdout.write("\033[K")
 
 
-clues = input_int("[*] 请输入可打探的次数：", tuple(range(11)))
+clues = input_int("[*] 请输入可打探的次数：", range(11))
 infos = ((), (), ())
 print("请稍等，正在计算中……")
 while True:
     ret = buy_stage(clues, infos)
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0]}" + Colors.RESET)
     if isinstance(ret[1], int):
-        print("[A] 请选择打探 %s 的信息（选择从上往下第一个未被打探过的商店）" % (["饮品", "餐点", "纪念品"][ret[1]]))
+        goods = ["饮品", "餐点", "纪念品"][ret[1]]
+        print(Colors.YELLOW + f"[A] 请选择打探 {goods} 的信息（选择从上往下第一个未被打探过的商店）" + Colors.RESET)
         action_confirm()
-        choice = input_int("[*] 请问打探到的消息中，该商店的进货策略是？(1-3) ", tuple(range(1, 4)))
+        choice = input_int("[*] 请问打探到的消息中，该商店的进货策略是？(1-3) ", range(1, 4))
         infos = list(infos)
         infos[ret[1]] = infos[ret[1]] + (choice - 1,)
         infos = tuple(infos)
         clues -= 1
     else:
         strategy = [["保守", "稳健", "激进"][ret[1][i]] for i in range(3)]
-        print("[A] 进货策略已确定：" + "，".join(strategy))
+        print(Colors.YELLOW + "[A] 进货策略已确定：" + "，".join(strategy) + Colors.RESET)
         action_confirm()
         break
 
@@ -447,7 +480,7 @@ while True:
     ret = sell_stage(clues, 0, nums, rival_nums, info)
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
-        print("[A] 请进行一次消息打探。")
+        print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
         rival = input_int("[*] 请问打探到了哪个商店的信息？1 为其他商店，2 为钟表商店 (1-2) ", (1, 2))
         price = input_int("[*] 请问他们给出的售价是？", sell_drink)
@@ -459,7 +492,8 @@ while True:
         info = tuple(info)
         clues -= 1
     else:
-        print("[A] 饮品售卖策略已确定。请设定价格为：", sell_drink[ret[1][0]])
+        price = sell_drink[ret[1][0]]
+        print(Colors.YELLOW + f"[A] 饮品售卖策略已确定。请设定价格为：{price}" + Colors.RESET)
         action_confirm()
         break
 income += input_int("[*] 请输入饮品售卖收益（包括激励奖励）：")
@@ -471,7 +505,7 @@ while True:
     ret = sell_stage(clues, 1, nums, rival_nums, info)
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
-        print("[A] 请进行一次消息打探。")
+        print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
         rival = input_int("[*] 请问打探到了哪个商店的信息？1 为其他商店，2 为钟表商店 (1-2) ", (1, 2))
         price = input_int("[*] 请问他们给出的售价是？", sell_snack)
@@ -483,7 +517,8 @@ while True:
         info = tuple(info)
         clues -= 1
     else:
-        print("[A] 餐品售卖策略已确定。请设定价格为：", sell_snack[ret[1][0]])
+        price = sell_snack[ret[1][0]]
+        print(Colors.YELLOW + f"[A] 餐品售卖策略已确定。请设定价格为：{price}" + Colors.RESET)
         action_confirm()
         break
 income += input_int("[*] 请输入餐点售卖收益（包括激励奖励）：")
@@ -495,14 +530,15 @@ while True:
     ret = sell_stage(clues, 2, nums, rival_nums, info)
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0] - cost + income}" + Colors.RESET)
     if isinstance(ret[1], int):
-        print("[A] 请进行一次消息打探。")
+        print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
         price = input_int("[*] 请问他们给出的售价是？", sell_token)
         price_idx = list(sell_token).index(price)
         info = (price_idx,)
         clues -= 1
     else:
-        print("[A] 纪念品售卖策略已确定。请设定价格为：", sell_token[ret[1][0]])
+        price = sell_token[ret[1][0]]
+        print(Colors.YELLOW + f"[A] 纪念品售卖策略已确定。请设定价格为：{price}" + Colors.RESET)
         action_confirm()
         break
 income += input_int("[*] 请输入纪念品售卖收益（包括激励奖励）：")

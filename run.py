@@ -107,7 +107,7 @@ stock_token = customer_token
 
 remain_me = input_int("[*] 纪念品库存有多少（不知道的话填 0 即可）？")
 remain_rival = input_int("[*] 对方的纪念品库存有多少（不知道的话填 0 即可）？")
-remain_strategy = input_int("[*] 是否允许用更少的当日收入换取期望更多的未来收入？(0/1) ", (0, 1))
+remain_strategy = input_int("[*] 是否允许用更少的当日收入换取期望更多的未来收入？需要更久的计算时间 (0/1) ", (0, 1))
 if remain_strategy:
     print(Colors.RED + "[!] 请注意，后续的期望收益包括纪念品库存未来可能的收益。" + Colors.RESET)
 
@@ -123,8 +123,6 @@ sell_snack = list(range(sell_base_snack - 5, sell_base_snack + 6, 1))
 sell_token = list(range(sell_base_token - 50, sell_base_token + 51, 10))
 sell = [sell_drink, sell_snack, sell_token]
 
-future_value = (sell_token[5] + sell_token[4]) // 2
-
 # ============================================================
 
 
@@ -137,6 +135,94 @@ def average_with_weight(pairs):
 
 # ============================================================
 
+
+import datetime
+
+end_time = datetime.datetime(2023, 8, 22, 4, 0)
+now_time = datetime.datetime.now()
+countdown = (end_time - now_time).days + 1
+
+
+future_token_sell_cache = {}
+
+
+def future_token_sell(day, stock):
+    if day == 0:
+        return 0
+    if (day, stock) in future_token_sell_cache:
+        return future_token_sell_cache[(day, stock)]
+    unit = stock_token // 10 + (countdown - day)
+    my_stock, rival_stock = stock
+    __value = []
+    for rival_price in range(11):
+        __best_action = -1e9
+        for my_price in range(11):
+            if my_price > rival_price:
+                ratio = (4, 6)
+            elif my_price == rival_price:
+                ratio = (5, 5)
+            elif my_price < rival_price:
+                ratio = (6, 4)
+            my_sold = min(my_stock, unit * ratio[0])
+            rival_sold = min(rival_stock, unit * ratio[1])
+            my_income = sell_token[my_price] * my_sold
+            rival_income = sell_token[rival_price] * rival_sold
+            my_income += 5000 if my_income >= rival_income else 2000
+            __best_action = max(
+                __best_action,
+                future_token_value(
+                    day - 1, (my_stock - my_sold, rival_stock - rival_sold)
+                )
+                + my_income,
+            )
+        __value.append(__best_action)
+    __value = sum(__value) / len(__value)
+
+    future_token_sell_cache[(day, stock)] = __value
+    return __value
+
+
+future_token_value_cache = {}
+
+
+def future_token_value(day, stock):
+    if day == 0:
+        return 0
+    if (day, stock) in future_token_value_cache:
+        return future_token_value_cache[(day, stock)]
+    unit = stock_token // 10 + (countdown - day)
+    my_stock, rival_stock = stock
+    __value = []
+    for rival_strategy in range(3):
+        __best_action = -1e9
+        for my_strategy in range(3):
+            if my_strategy > rival_strategy:
+                ratio = (6, 4)
+            elif my_strategy == rival_strategy:
+                ratio = (5, 5)
+            elif my_strategy < rival_strategy:
+                ratio = (4, 6)
+            __best_action = max(
+                __best_action,
+                future_token_sell(
+                    day, (my_stock + unit * ratio[0], rival_stock + unit * ratio[1])
+                )
+                - buy_token[my_strategy] * unit * ratio[0],
+            )
+        __value.append(__best_action)
+    __value = sum(__value) / len(__value)
+
+    future_token_value_cache[(day, stock)] = __value
+    return __value
+
+
+def future_value_exp(day, stock):
+    if stock[0] == 0:
+        return 0
+    return future_token_value(day, stock) - future_token_value(day, (0, stock[1]))
+
+
+# ============================================================
 
 sell_result_cache = {}
 
@@ -206,12 +292,14 @@ def sell_action(gid, num, rival_num, info):
         for statement in statements:
             customer_base = customer[gid] // [90, 90, 10][gid]
             customer_num = customer_base * sell_result(statement + (c,), c)
-            income = min(customer_num, num) * sell[gid][c]
+            my_sold = min(customer_num, num)
+            income = my_sold * sell[gid][c]
             income_rank = 0
             for _c, _n in zip(statement, rival_num):
                 _n += remain_rival * (gid == 2)
                 rival_customer_num = customer_base * sell_result(statement + (c,), _c)
-                rival_income = min(rival_customer_num, _n) * sell[gid][_c]
+                rival_sold = min(rival_customer_num, _n)
+                rival_income = rival_sold * sell[gid][_c]
                 if rival_income > income:
                     income_rank += 1
             # print(c, statement + (c,), sell_result(statement + (c,), c), sell[gid][c], income, income_rank)
@@ -221,8 +309,10 @@ def sell_action(gid, num, rival_num, info):
                 income += 2000
             else:
                 income += 1000
-            if remain_strategy and gid == 2 and num > customer_num:
-                income += (num - customer_num) * future_value
+            if remain_strategy and gid == 2:
+                income += future_value_exp(
+                    countdown - 1, (num - my_sold, rival_num[0] - rival_sold)
+                )
             incomes.append(income)
             if len(info) == 2 and None in info and statement[0] == statement[1]:
                 sameprice = income
@@ -574,7 +664,8 @@ print("最后……")
 
 print(Colors.GREEN + f"[+] 实际收益为：{income - cost}" + Colors.RESET)
 if new_remain_me:
-    print(Colors.GREEN + f"[+] 未来期望收益为：{future_value * new_remain_me}" + Colors.RESET)
+    future_value = future_value_exp(countdown - 1, (new_remain_me, new_remain_rival))
+    print(Colors.GREEN + f"[+] 库存的未来期望收益为：{future_value}" + Colors.RESET)
 
 print("结束了！")
 action_confirm()

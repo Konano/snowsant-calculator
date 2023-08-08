@@ -10,4 +10,5 @@
 
 ```
 python3 run.py
+pypy3 run.py  # 推荐用法
 ```

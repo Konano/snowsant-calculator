@@ -105,9 +105,9 @@ stock_drink = customer_drink
 stock_snack = customer_snack
 stock_token = customer_token
 
-remain_me = input_int("[*] 纪念品库存有多少（不知道的话填 0 即可）？")
-remain_rival = input_int("[*] 对方的纪念品库存有多少（不知道的话填 0 即可）？")
-remain_strategy = input_int("[*] 是否允许用更少的当日收入换取期望更多的未来收入？需要更久的计算时间 (0/1) ", (0, 1))
+remain_me = input_int("[*] 雪雉商店的纪念品库存有多少（不知道的话填 0 即可）？")
+remain_rival = input_int("[*] 时光商店的纪念品库存有多少（不知道的话填 0 即可）？")
+remain_strategy = input_int("[*] 是否允许用更少的当日收入换取更多的未来期望收入？需要更久的计算时间。0 为否，1 为是 (0/1) ", (0, 1))
 if remain_strategy:
     print(Colors.RED + "[!] 请注意，后续的期望收益包括纪念品库存未来可能的收益。" + Colors.RESET)
 
@@ -555,9 +555,9 @@ while True:
     print(Colors.GREEN + f"[+] 当前期望收益为：{ret[0]}" + Colors.RESET)
     if isinstance(ret[1], int):
         goods = ["饮品", "餐点", "纪念品"][ret[1]]
-        print(Colors.YELLOW + f"[A] 请选择打探 {goods} 的信息（选择从上往下第一个未打探过的商店）" + Colors.RESET)
+        print(Colors.YELLOW + f"[A] 请打探 {goods} 的信息（从上往下选择第一个未打探过的商店）" + Colors.RESET)
         action_confirm()
-        choice = input_int("[*] 请问打探到的消息中，该商店的进货策略是？(1-3) ", range(1, 4))
+        choice = input_int("[*] 请问该商店的进货策略是？1 保守，2 稳健，3 激进 (1-3) ", range(1, 4))
         infos = list(infos)
         infos[ret[1]] = infos[ret[1]] + (choice - 1,)
         infos = tuple(infos)
@@ -569,11 +569,11 @@ while True:
         break
 
 print("[+] 请告知每种商品的进货数量，店与店之间用空格隔开。")
-print("[+] 注意，商店的次序需要是特定的顺序（雪雉商店，其他商店，钟表商店）而不是进货数量排行榜上的顺序。")
+print("[+] 注意，商店的次序需要是特定的顺序，而不是进货数量排行榜上的顺序。")
 
-drink = input_ints("[*] 饮品进货数量（三个数，中间用空格隔开）：", 3, customer_drink)
-snack = input_ints("[*] 餐点进货数量（三个数，中间用空格隔开）：", 3, customer_snack)
-token = input_ints("[*] 纪念品进货数量（两个数，中间用空格隔开）：", 2, customer_token)
+drink = input_ints("[*] 饮品进货数量（按顺序三个数分别是 雪雉商店、鸡尾酒商店、时光商店，中间用空格隔开）：", 3, customer_drink)
+snack = input_ints("[*] 餐点进货数量（按顺序三个数分别是 雪雉商店、冰淇淋商店、时光商店，中间用空格隔开）：", 3, customer_snack)
+token = input_ints("[*] 纪念品进货数量（按顺序两个数分别是 雪雉商店、时光商店，中间用空格隔开）：", 2, customer_token)
 
 nums = (drink[0], snack[0], token[0])
 rival_nums = (drink[1:], snack[1:], token[1:])
@@ -589,7 +589,7 @@ while True:
     if isinstance(ret[1], int):
         print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
-        rival = input_int("[*] 请问打探到了哪个商店的信息？1 为其他商店，2 为钟表商店 (1-2) ", (1, 2))
+        rival = input_int("[*] 请问打探到了哪个商店的信息？1 为鸡尾酒商店，2 为时光商店 (1-2) ", (1, 2))
         price = input_int("[*] 请问他们给出的售价是？", sell_drink)
         price_idx = list(sell_drink).index(price)
         if info == ():
@@ -614,7 +614,7 @@ while True:
     if isinstance(ret[1], int):
         print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
-        rival = input_int("[*] 请问打探到了哪个商店的信息？1 为其他商店，2 为钟表商店 (1-2) ", (1, 2))
+        rival = input_int("[*] 请问打探到了哪个商店的信息？1 为冰淇淋商店，2 为时光商店 (1-2) ", (1, 2))
         price = input_int("[*] 请问他们给出的售价是？", sell_snack)
         price_idx = list(sell_snack).index(price)
         if info == ():
@@ -639,7 +639,7 @@ while True:
     if isinstance(ret[1], int):
         print(Colors.YELLOW + f"[A] 请进行一次消息打探。" + Colors.RESET)
         action_confirm()
-        price = input_int("[*] 请问他们给出的售价是？", sell_token)
+        price = input_int("[*] 请问时光商店给出的售价是？", sell_token)
         price_idx = list(sell_token).index(price)
         info = (price_idx,)
         clues -= 1
@@ -650,14 +650,14 @@ while True:
         break
 income += input_int("[*] 请输入纪念品售卖收益（包括激励奖励）：")
 
-sold_token_me = input_int("[*] 请输入纪念品售卖数量：")
-sold_token_rival = input_int("[*] 请输入钟表商店的纪念品售卖数量：")
+sold_token_me = input_int("[*] 请输入雪雉商店的纪念品售卖数量：")
+sold_token_rival = input_int("[*] 请输入时光商店的纪念品售卖数量：")
 new_remain_me = remain_me + nums[-1] - sold_token_me
 new_remain_rival = remain_rival + rival_nums[-1][-1] - sold_token_rival
-print(Colors.GREEN + f"[+] 纪念品库存为：{new_remain_me}" + Colors.RESET)
-print(Colors.GREEN + f"[+] 钟表商店的纪念品库存为：{new_remain_rival}" + Colors.RESET)
+print(Colors.GREEN + f"[+] 雪雉商店的纪念品库存为：{new_remain_me}" + Colors.RESET)
+print(Colors.GREEN + f"[+] 时光商店的纪念品库存为：{new_remain_rival}" + Colors.RESET)
 if new_remain_rival < 0:
-    print(Colors.RED + f"[!] 哦！貌似钟表商店之前是有库存的！没关系，他们现在大概率没库存了 =v=" + Colors.RESET)
+    print(Colors.RED + f"[!] 貌似时光商店之前是有库存的！没关系，他们现在大概率没库存了 =v=" + Colors.RESET)
 print("请记录好以上信息。")
 
 print("最后……")

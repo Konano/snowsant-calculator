@@ -89,8 +89,12 @@ elif good_stage == 2:
     sell_base_token = 1000
 
 elif good_stage == 3:
-    print(Colors.RED + "[!] 该商品种类的基础数据尚未添加。" + Colors.RESET)
-    exit()
+    buy_drink = [40, 56, 76]
+    buy_snack = [20, 40, 64]
+    buy_token = [50, 100, 200]
+    sell_base_drink = 200
+    sell_base_snack = 160
+    sell_base_token = 1000
 
 elif good_stage == 4:
     print(Colors.RED + "[!] 该商品种类的基础数据尚未添加。" + Colors.RESET)

@@ -159,7 +159,7 @@ def future_token_sell(day, stock):
         return 0
     if (day, stock) in future_token_sell_cache:
         return future_token_sell_cache[(day, stock)]
-    unit = stock_token // 10 + (countdown - day)
+    unit = min(stock_token // 10 + (countdown - day), 14)
     my_stock, rival_stock = stock
     __value = []
     for rival_price in range(11):
@@ -198,7 +198,7 @@ def future_token_value(day, stock):
         return 0
     if (day, stock) in future_token_value_cache:
         return future_token_value_cache[(day, stock)]
-    unit = stock_token // 10 + (countdown - day)
+    unit = min(stock_token // 10 + (countdown - day), 14)
     my_stock, rival_stock = stock
     __value = []
     for rival_strategy in range(3):

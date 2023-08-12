@@ -97,8 +97,12 @@ elif good_stage == 3:
     sell_base_token = 1000
 
 elif good_stage == 4:
-    print(Colors.RED + "[!] 该商品种类的基础数据尚未添加。" + Colors.RESET)
-    exit()
+    buy_drink = [50, 70, 95]
+    buy_snack = [25, 50, 80]
+    buy_token = [50, 100, 200]
+    sell_base_drink = 250
+    sell_base_snack = 200
+    sell_base_token = 1000
 
 customer_drink = input_int("[*] 今日的饮品爱好者有多少？", 90)
 customer_snack = input_int("[*] 今日的餐点爱好者有多少？", 90)

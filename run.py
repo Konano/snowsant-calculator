@@ -232,6 +232,9 @@ def future_value_exp(day, stock):
 
 # ============================================================
 
+
+from functools import lru_cache
+
 sell_result_cache = {}
 
 
@@ -258,6 +261,7 @@ def sell_result(bid, me) -> int:
     return ret
 
 
+@lru_cache(maxsize=None)
 def sell_conflict_checker(statement, info) -> bool:
     if len(info) == 0:
         return True
